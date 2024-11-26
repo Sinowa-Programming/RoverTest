@@ -42,6 +42,8 @@ const byte TriggerPin = A4;
 fgcu::RoverHead head{EchoPin, TriggerPin, ServoPin};
 
 
+// Specific code
+const float moveDist = 14;
 
 void setup() {
   lcd.begin(16,2);
@@ -53,6 +55,32 @@ void setup() {
 }
 
 void loop() {
+  if(!wheels.isMoving()) {
+    // Left check
+    head.turnHead(0);
+    word leftDist = head.getDistance();
 
+    // Straight check
+    head.turnHead(90);
+    word straightDist = head.getDistance();
+
+    // Right check
+    head.turnHead(180);
+    word rightDist = head.getDistance();
+  
+    if(leftDist < minDist) {
+      wheels.turnRight(0.5f); // Half left turn
+    } else if(straightDist < minDist) {
+      if(leftDist > rightDist) {
+        wheels.turnLeft();
+      } else {
+        wheels.turnRight();
+      }
+    } else if(righttDist < minDist) {
+      wheels.turnLeft(0.5f); // Half right turn
+    } else {
+      wheels.moveForward(moveDist/8.f); // Each full rotation is 8 inches
+    }
+  }
 
 };
