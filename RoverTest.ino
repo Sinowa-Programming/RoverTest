@@ -43,7 +43,9 @@ fgcu::RoverHead head{EchoPin, TriggerPin, ServoPin};
 
 
 // Specific code
-const float moveDist = 14;
+// All in inches
+const float moveDist = 4;
+const float minDist = 10;
 
 void setup() {
   lcd.begin(16,2);
@@ -51,36 +53,40 @@ void setup() {
 
   delay(2000);
 
+  lcd.clear();
+
   head.turnHead(90);
 }
 
+
+word straightDist{0};
 void loop() {
+  wheels.run();
   if(!wheels.isMoving()) {
-    // Left check
-    head.turnHead(0);
-    word leftDist = head.getDistance();
+    straightDist = getDistanceAtAngle(90);
 
-    // Straight check
-    head.turnHead(90);
-    word straightDist = head.getDistance();
+    lcd.print("Distance: ");
+    lcd.setCursor(10, 0);
+    lcd.print(straightDist);
 
-    // Right check
-    head.turnHead(180);
-    word rightDist = head.getDistance();
-  
-    if(leftDist < minDist) {
-      wheels.turnRight(0.5f); // Half left turn
-    } else if(straightDist < minDist) {
-      if(leftDist > rightDist) {
+    if(straightDist < minDist) {
+      if(getDistanceAtAngle(180) > getDistanceAtAngle(0)) { // left dist > right dist
         wheels.turnLeft();
       } else {
         wheels.turnRight();
       }
-    } else if(righttDist < minDist) {
-      wheels.turnLeft(0.5f); // Half right turn
     } else {
       wheels.moveForward(moveDist/8.f); // Each full rotation is 8 inches
     }
   }
 
 };
+
+word getDistanceAtAngle(byte angle) {
+    // Right check
+  head.turnHead(angle);
+  while(head.isMeasuring()) {
+    head.run();
+  }
+  return head.getDistance();
+}
