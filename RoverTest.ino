@@ -65,6 +65,8 @@ void loop() {
   if(!wheels.isMoving()) {
     straightDist = getDistanceAtAngle(90);
 
+    lcd.clear();
+    lcd.setCursor(0, 0);
     lcd.print("Distance: ");
     lcd.setCursor(10, 0);
     lcd.print(straightDist);
