@@ -14,17 +14,6 @@
 #include "RoverWheels.h"
 #include "StopWatch.h"
 
-enum RoverWheelState {
-  Stop,
-  Straight,
-  ShortStraight,
-  CorrectLeft,
-  TurnLeft,
-  CorrectRight,
-  TurnRight,
-  Backup
-};
-
 // LCD
 const int rs = 12, en = 11, d4 = 3, d5 = 2, d6 = 1, d7 = 0;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
@@ -41,6 +30,11 @@ const byte TriggerPin = A4;
 
 fgcu::RoverHead head{EchoPin, TriggerPin, ServoPin};
 
+enum ANGLE {
+  LEFT = 8,
+  STRAIGHT = 98,
+  RIGHT = 188
+};
 
 // Specific code
 // All in inches
@@ -55,7 +49,7 @@ void setup() {
 
   lcd.clear();
 
-  head.turnHead(90);
+  head.turnHead(STRAIGHT);
 }
 
 
@@ -63,7 +57,7 @@ word straightDist{0};
 void loop() {
   wheels.run();
   if(!wheels.isMoving()) {
-    straightDist = getDistanceAtAngle(90);
+    straightDist = getDistanceAtAngle(STRAIGHT);
 
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -72,10 +66,10 @@ void loop() {
     lcd.print(straightDist);
 
     if(straightDist < minDist) {
-      if(getDistanceAtAngle(180) > getDistanceAtAngle(0)) { // left dist > right dist
-        wheels.turnLeft();
+      if(getDistanceAtAngle(RIGHT) > getDistanceAtAngle(LEFT)) { // left dist > right dist
+        wheels.turnLeft(1.2);
       } else {
-        wheels.turnRight();
+        wheels.turnRight(1.2);
       }
     } else {
       wheels.moveForward(moveDist/8.f); // Each full rotation is 8 inches
