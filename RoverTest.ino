@@ -78,7 +78,6 @@ void loop() {
     head.turnHead(99); // Center
     while (head.isMeasuring()) {
       head.run();
-      lcd.clear();
     }
 
     distFront = head.getDistance();
@@ -104,7 +103,7 @@ void loop() {
     // wheels.run();
       wheels.moveForward();
     }
-    else if (distLeft > distRight) {
+    else if (distLeft < distRight) {
       // wheels.run();
       wheels.turnLeft();
       // wheels.moveForward();
