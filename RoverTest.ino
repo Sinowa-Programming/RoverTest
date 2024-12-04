@@ -8,12 +8,10 @@
 // with direction of the head and distance measured.
 // ------------------------------------------------------------
 
-#include <LiquidCrystal.h>
-
 #include "RoverHead.h"
 #include "RoverWheels.h"
 #include "StopWatch.h"
-
+#include <LiquidCrystal.h>
 enum RoverWheelState {
   Stop,
   Straight,
@@ -29,11 +27,16 @@ enum RoverWheelState {
 const int rs = 12, en = 11, d4 = 3, d5 = 2, d6 = 1, d7 = 0;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-
 fgcu::FourPin motorPinsLeft { A0, A1, A2, A3};
 fgcu::FourPin motorPinsRight { 4, 5, 6, 7};
 float speed = 600.f;
 fgcu::RoverWheels wheels{motorPinsLeft, motorPinsRight, speed};
+
+RoverWheelState wheelStates[] = { Straight, TurnLeft, ShortStraight, Backup, 
+                                  CorrectRight, ShortStraight, CorrectRight, 
+                                  Straight, Stop };
+int wheelStateCount = 9;
+int wheelStateIndex = 0;
 
 const byte ServoPin = 9;
 const byte EchoPin = A5;
@@ -42,53 +45,121 @@ const byte TriggerPin = A4;
 fgcu::RoverHead head{EchoPin, TriggerPin, ServoPin};
 
 
-// Specific code
-// All in inches
-const float moveDist = 4;
-const float minDist = 10;
 
 void setup() {
-  lcd.begin(16,2);
-  lcd.write("Hello world!");
-
-  delay(2000);
-
+  
+  lcd.begin(16,2);  
+  
   lcd.clear();
-
+  lcd.write("Hello world!");
+  delay(2000);
   head.turnHead(90);
-}
 
+  // blocking call to get the head turned 
+  // to 90 degrees and distance taken
+  bool done = false;
+  do {
+    done = head.run();
+  } while (!done);
+  
+} // setup
 
-word straightDist{0};
+const int thresholdFront = 10; // Distance to trigger turn
+const int thresholdSide = 10;  // Distance to trigger correction
+ //read distances  
+  word distFront=0, distLeft=0, distRight=0;
+
 void loop() {
   wheels.run();
-  if(!wheels.isMoving()) {
-    straightDist = getDistanceAtAngle(90);
 
+  
+  if(!wheels.isMoving()){
+    // Measure forward distance
+    head.turnHead(99); // Center
+    while (head.isMeasuring()) {
+      head.run();
+      lcd.clear();
+    }
+
+    distFront = head.getDistance();
+
+    // Measure left distance
+    head.turnHead(188); // Turn head left
+    while (head.isMeasuring()) {
+      head.run();
+    }
+    distLeft = head.getDistance();
+
+    // Measure right distance
+    head.turnHead(0); // Turn head right
+    while (head.isMeasuring()) {
+      head.run();
+    }
+    distRight = head.getDistance();
     lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Distance: ");
-    lcd.setCursor(10, 0);
-    lcd.print(straightDist);
+    lcd.setCursor(0,0);
+    lcd.print(distFront);
 
-    if(straightDist < minDist) {
-      if(getDistanceAtAngle(180) > getDistanceAtAngle(0)) { // left dist > right dist
-        wheels.turnLeft();
-      } else {
-        wheels.turnRight();
-      }
+    if (distFront > thresholdFront) {
+    // wheels.run();
+      wheels.moveForward();
+    }
+    else if (distLeft > distRight) {
+      // wheels.run();
+      wheels.turnLeft();
+      // wheels.moveForward();
     } else {
-      wheels.moveForward(moveDist/8.f); // Each full rotation is 8 inches
+    // wheels.run();
+      wheels.turnRight();
+    // wheels.moveForward();      
     }
   }
-
-};
-
-word getDistanceAtAngle(byte angle) {
-    // Right check
-  head.turnHead(angle);
-  while(head.isMeasuring()) {
-    head.run();
-  }
-  return head.getDistance();
 }
+
+// method uses the states collection to see what wheel state to execute next
+void moveWheels() {
+
+  switch (wheelStates[wheelStateIndex]) {
+    case Stop:
+      Serial.print("Stop\n");
+      wheels.stop();
+      head.turnHead(90);
+      break;
+    case Straight:
+      Serial.print("Straight\n");
+      wheels.moveForward();
+      head.turnHead(90);
+      break;
+    case ShortStraight:
+      Serial.print("ShortStraight\n");
+      wheels.moveForward(0.5f);
+      head.turnHead(90);
+      break;
+    case CorrectLeft:
+      Serial.print("CorrectLeft\n");
+      wheels.turnLeft(0.5f);
+      head.turnHead(135);
+      break;
+    case TurnLeft:
+      Serial.print("TurnLeft\n");
+      wheels.turnLeft();
+      head.turnHead(180);
+      break;
+    case CorrectRight:
+      Serial.print("CorrectRight\n");
+      wheels.turnRight(0.5f);
+      head.turnHead(45);
+      break;
+    case TurnRight:
+      Serial.print("TurnRight\n");
+      wheels.turnRight();
+      head.turnHead(0);
+      break;
+    case Backup:
+      Serial.print("Backup\n");
+      wheels.moveBackward();
+      head.turnHead(90);
+  } // rover state
+
+} // moveWheels
+
