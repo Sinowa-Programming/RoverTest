@@ -11,7 +11,6 @@
 #include "RoverHead.h"
 #include "RoverWheels.h"
 #include "StopWatch.h"
-#include <LiquidCrystal.h>
 enum RoverWheelState {
   Stop,
   Straight,
@@ -22,10 +21,6 @@ enum RoverWheelState {
   TurnRight,
   Backup
 };
-
-// LCD
-const int rs = 12, en = 11, d4 = 3, d5 = 2, d6 = 1, d7 = 0;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 fgcu::FourPin motorPinsLeft { A0, A1, A2, A3};
 fgcu::FourPin motorPinsRight { 4, 5, 6, 7};
@@ -47,11 +42,6 @@ fgcu::RoverHead head{EchoPin, TriggerPin, ServoPin};
 
 
 void setup() {
-  
-  lcd.begin(16,2);  
-  
-  lcd.clear();
-  lcd.write("Hello world!");
   delay(2000);
   head.turnHead(90);
 
@@ -83,7 +73,7 @@ void loop() {
     distFront = head.getDistance();
 
     // Measure left distance
-    head.turnHead(188); // Turn head left
+    head.turnHead(190); // Turn head left
     while (head.isMeasuring()) {
       head.run();
     }
@@ -95,9 +85,6 @@ void loop() {
       head.run();
     }
     distRight = head.getDistance();
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print(distFront);
 
     if (distFront > thresholdFront) {
     // wheels.run();
