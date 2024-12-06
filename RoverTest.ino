@@ -42,7 +42,7 @@ byte curState = NORMAL;
 enum ANGLE {
   LEFT = 8,
   STRAIGHT = 98,
-  RIGHT = 188
+  RIGHT = 180
 };
 
 // Specific code
@@ -68,7 +68,6 @@ void loop() {
     switch(curState) {
       case NORMAL: {
         head.turnHead((byte)STRAIGHT);
-        while(!head.run());
         while(head.isMeasuring()) {
           head.run();
         }
@@ -76,7 +75,6 @@ void loop() {
 
         if(straightDist < minDist) {
           head.turnHead((byte)RIGHT);
-          while(!head.run());
           while(head.isMeasuring()) {
             head.run();
           }
